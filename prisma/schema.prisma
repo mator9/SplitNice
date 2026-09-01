@@ -1,0 +1,262 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  accounts Account[]
+  sessions Session[]
+
+  groupMemberships GroupMember[]
+  expensesPaid     Expense[]          @relation("PaidByUser")
+  expensePayers    ExpensePayer[]
+  expenseSplits    ExpenseSplit[]
+  settlementsPaid  Settlement[]       @relation("SettlementFrom")
+  settlementsRecvd Settlement[]       @relation("SettlementTo")
+  notifications    Notification[]
+  friendsInitiated FriendRelation[]   @relation("FriendInitiator")
+  friendsReceived  FriendRelation[]   @relation("FriendReceiver")
+  activities       Activity[]
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model FriendRelation {
+  id        String               @id @default(cuid())
+  userId    String
+  friendId  String
+  status    FriendRelationStatus @default(PENDING)
+  createdAt DateTime             @default(now())
+  updatedAt DateTime             @updatedAt
+
+  user   User @relation("FriendInitiator", fields: [userId], references: [id], onDelete: Cascade)
+  friend User @relation("FriendReceiver", fields: [friendId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, friendId])
+}
+
+enum FriendRelationStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+}
+
+model Group {
+  id          String      @id @default(cuid())
+  name        String
+  description String?
+  image       String?
+  type        GroupType   @default(OTHER)
+  archived    Boolean     @default(false)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  createdById String
+
+  members    GroupMember[]
+  expenses   Expense[]
+  activities Activity[]
+}
+
+enum GroupType {
+  TRIP
+  APARTMENT
+  COUPLE
+  EVENT
+  OTHER
+}
+
+model GroupMember {
+  id       String          @id @default(cuid())
+  groupId  String
+  userId   String
+  role     GroupMemberRole @default(MEMBER)
+  joinedAt DateTime        @default(now())
+
+  group Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([groupId, userId])
+}
+
+enum GroupMemberRole {
+  ADMIN
+  MEMBER
+}
+
+model Expense {
+  id          String      @id @default(cuid())
+  description String
+  amount      Decimal     @db.Decimal(19, 4)
+  currency    String      @default("USD")
+  date        DateTime    @default(now())
+  category    String?
+  notes       String?
+  splitType   SplitType   @default(EQUAL)
+  groupId     String?
+  paidById    String
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  deletedAt   DateTime?
+
+  group       Group?           @relation(fields: [groupId], references: [id], onDelete: SetNull)
+  paidBy      User             @relation("PaidByUser", fields: [paidById], references: [id])
+  payers      ExpensePayer[]
+  splits      ExpenseSplit[]
+  attachments Attachment[]
+  activities  Activity[]
+}
+
+enum SplitType {
+  EQUAL
+  EXACT
+  PERCENTAGE
+  SHARES
+}
+
+model ExpensePayer {
+  id        String  @id @default(cuid())
+  expenseId String
+  userId    String
+  amount    Decimal @db.Decimal(19, 4)
+
+  expense Expense @relation(fields: [expenseId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id])
+
+  @@unique([expenseId, userId])
+}
+
+model ExpenseSplit {
+  id         String  @id @default(cuid())
+  expenseId  String
+  userId     String
+  amount     Decimal @db.Decimal(19, 4)
+  percentage Decimal? @db.Decimal(7, 4)
+  shares     Int?
+
+  expense Expense @relation(fields: [expenseId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id])
+
+  @@unique([expenseId, userId])
+}
+
+model Settlement {
+  id        String   @id @default(cuid())
+  amount    Decimal  @db.Decimal(19, 4)
+  currency  String   @default("USD")
+  fromId    String
+  toId      String
+  groupId   String?
+  notes     String?
+  date      DateTime @default(now())
+  createdAt DateTime @default(now())
+
+  from       User       @relation("SettlementFrom", fields: [fromId], references: [id])
+  to         User       @relation("SettlementTo", fields: [toId], references: [id])
+  activities Activity[]
+}
+
+model Attachment {
+  id        String   @id @default(cuid())
+  expenseId String
+  filename  String
+  path      String
+  mimeType  String?
+  createdAt DateTime @default(now())
+
+  expense Expense @relation(fields: [expenseId], references: [id], onDelete: Cascade)
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  type      NotificationType
+  title     String
+  message   String
+  read      Boolean          @default(false)
+  link      String?
+  createdAt DateTime         @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+enum NotificationType {
+  FRIEND_REQUEST
+  FRIEND_ACCEPTED
+  GROUP_ADDED
+  EXPENSE_ADDED
+  EXPENSE_EDITED
+  SETTLEMENT_RECORDED
+}
+
+model Activity {
+  id           String       @id @default(cuid())
+  type         ActivityType
+  description  String
+  userId       String
+  groupId      String?
+  expenseId    String?
+  settlementId String?
+  createdAt    DateTime     @default(now())
+
+  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  group      Group?      @relation(fields: [groupId], references: [id], onDelete: SetNull)
+  expense    Expense?    @relation(fields: [expenseId], references: [id], onDelete: SetNull)
+  settlement Settlement? @relation(fields: [settlementId], references: [id], onDelete: SetNull)
+}
+
+enum ActivityType {
+  EXPENSE_CREATED
+  EXPENSE_EDITED
+  EXPENSE_DELETED
+  SETTLEMENT_CREATED
+  GROUP_CREATED
+  GROUP_EDITED
+  MEMBER_ADDED
+  MEMBER_REMOVED
+  FRIEND_ADDED
+}
