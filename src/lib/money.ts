@@ -56,7 +56,7 @@ export function calculateEqualSplit(
   const perPerson = totalAmount.div(count).toDecimalPlaces(2, Decimal.ROUND_DOWN);
   let remainder = totalAmount.minus(perPerson.times(count));
 
-  return participantIds.map((userId, i) => {
+  return participantIds.map((userId) => {
     let amount = perPerson;
     if (remainder.greaterThan(0)) {
       amount = amount.plus(new Decimal("0.01"));
@@ -241,7 +241,7 @@ export function simplifyDebts(
   const netBalance = new Map<string, Decimal>();
 
   for (const [user, debts] of balanceMap) {
-    for (const [other, amount] of debts) {
+    for (const [, amount] of debts) {
       if (!netBalance.has(user)) netBalance.set(user, new Decimal(0));
       netBalance.set(user, netBalance.get(user)!.minus(amount));
     }

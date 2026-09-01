@@ -24,10 +24,12 @@ export function useFetch<T>(url: string | null) {
     } finally {
       setLoading(false);
     }
+     
   }, [url]);
 
   useEffect(() => {
     fetchData();
+     
   }, [fetchData]);
 
   return { data, loading, error, refetch: fetchData };
@@ -39,6 +41,7 @@ export function useDebounce<T>(value: T, delay: number): T {
   useEffect(() => {
     const handler = setTimeout(() => setDebouncedValue(value), delay);
     return () => clearTimeout(handler);
+     
   }, [value, delay]);
 
   return debouncedValue;

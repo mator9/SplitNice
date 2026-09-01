@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import Modal from "@/components/ui/Modal";
 import Button from "@/components/ui/Button";
@@ -14,6 +14,8 @@ interface Group {
     user: { id: string; name: string; email: string };
   }>;
 }
+
+type Participant = { userId: string; name: string; amount: string; percentage: string; shares: number };
 
 interface AddExpenseModalProps {
   onClose: () => void;
@@ -34,15 +36,14 @@ export default function AddExpenseModal({ onClose, onSuccess, groupId }: AddExpe
   const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
   const [category, setCategory] = useState("");
   const [notes, setNotes] = useState("");
-  const [participants, setParticipants] = useState<
-    Array<{ userId: string; name: string; amount: string; percentage: string; shares: number }>
-  >([]);
+  const [participants, setParticipants] = useState<Participant[]>([]);
 
   useEffect(() => {
     fetch("/api/groups")
       .then((r) => r.json())
       .then(setGroups)
       .catch(() => {});
+     
   }, []);
 
   useEffect(() => {
@@ -72,7 +73,15 @@ export default function AddExpenseModal({ onClose, onSuccess, groupId }: AddExpe
         },
       ]);
     }
+     
   }, [selectedGroupId, groups, session]);
+
+  const handleGroupChange = useCallback(
+    (newGroupId: string) => {
+      setSelectedGroupId(newGroupId);
+    },
+    []
+  );
 
   const handleSubmit = async () => {
     if (!description || !amount || !session?.user?.id) return;
@@ -178,7 +187,7 @@ export default function AddExpenseModal({ onClose, onSuccess, groupId }: AddExpe
         <Select
           label="Group (optional)"
           value={selectedGroupId}
-          onChange={(e) => setSelectedGroupId(e.target.value)}
+          onChange={(e) => handleGroupChange(e.target.value)}
           options={[
             { value: "", label: "No group" },
             ...groups.map((g) => ({ value: g.id, label: g.name })),
