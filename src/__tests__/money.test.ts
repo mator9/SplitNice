@@ -385,6 +385,47 @@ describe("settlement integration", () => {
     // Bob owed 50, paid 70, so alice now owes bob 20
     expect(bobBalance.youAreOwed.toFixed(2)).toBe("20.00");
   });
+
+  it("settlement from creditor to debtor reduces debt (Alice→Bob when Bob owes Alice)", () => {
+    const expenses = [
+      {
+        payers: [{ userId: "alice", amount: toDecimal("60") }],
+        splits: [
+          { userId: "alice", amount: toDecimal("30") },
+          { userId: "bob", amount: toDecimal("30") },
+        ],
+      },
+      {
+        payers: [{ userId: "alice", amount: toDecimal("20") }],
+        splits: [
+          { userId: "alice", amount: toDecimal("10") },
+          { userId: "bob", amount: toDecimal("10") },
+        ],
+      },
+    ];
+
+    const balanceMapBefore = calculateNetBalances(expenses, []);
+    const aliceBefore = getUserNetBalance("alice", balanceMapBefore);
+    const bobBefore = getUserNetBalance("bob", balanceMapBefore);
+    expect(aliceBefore.youAreOwed.toFixed(2)).toBe("40.00");
+    expect(bobBefore.youOwe.toFixed(2)).toBe("40.00");
+
+    const settlements = [
+      { fromId: "alice", toId: "bob", amount: toDecimal("10") },
+    ];
+    const balanceMap = calculateNetBalances(expenses, settlements);
+    const aliceBalance = getUserNetBalance("alice", balanceMap);
+    const bobBalance = getUserNetBalance("bob", balanceMap);
+
+    expect(bobBalance.youOwe.toFixed(2)).toBe("30.00");
+    expect(aliceBalance.youAreOwed.toFixed(2)).toBe("30.00");
+
+    const simplified = simplifyDebts(balanceMap);
+    expect(simplified).toHaveLength(1);
+    expect(simplified[0].from).toBe("bob");
+    expect(simplified[0].to).toBe("alice");
+    expect(simplified[0].amount.toFixed(2)).toBe("30.00");
+  });
 });
 
 describe("edge cases", () => {

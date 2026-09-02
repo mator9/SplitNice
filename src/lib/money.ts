@@ -229,7 +229,15 @@ export function calculateNetBalances(
   }
 
   for (const settlement of settlements) {
-    addBalance(settlement.toId, settlement.fromId, toDecimal(settlement.amount));
+    const amount = toDecimal(settlement.amount);
+    const fromDebt =
+      balances.get(settlement.fromId)?.get(settlement.toId) || new Decimal(0);
+
+    if (fromDebt.greaterThanOrEqualTo(0)) {
+      addBalance(settlement.fromId, settlement.toId, amount.neg());
+    } else {
+      addBalance(settlement.toId, settlement.fromId, amount.neg());
+    }
   }
 
   return balances;
