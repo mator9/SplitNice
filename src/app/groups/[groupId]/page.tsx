@@ -51,8 +51,8 @@ export default function GroupDetailPage() {
   const router = useRouter();
   const { data: session } = useSession();
   const groupId = params.groupId as string;
-  const { data: group, refetch } = useFetch<GroupDetail>(`/api/groups/${groupId}`);
-  const { data: balances, refetch: refetchBalances } = useFetch<BalanceData>(`/api/groups/${groupId}/balances`);
+  const { data: group, loading: groupLoading, refetch } = useFetch<GroupDetail>(`/api/groups/${groupId}`);
+  const { data: balances, loading: balancesLoading, refetch: refetchBalances } = useFetch<BalanceData>(`/api/groups/${groupId}/balances`);
   const [showAddExpense, setShowAddExpense] = useState(false);
   const [showAddMember, setShowAddMember] = useState(false);
   const [showSettle, setShowSettle] = useState(false);
@@ -64,7 +64,7 @@ export default function GroupDetailPage() {
   const [settleLoading, setSettleLoading] = useState(false);
   const [tab, setTab] = useState<"expenses" | "balances" | "members">("expenses");
 
-  if (!group) {
+  if (groupLoading || !group) {
     return (
       <div className="flex items-center justify-center py-20">
         <div className="animate-spin w-8 h-8 border-4 border-emerald-600 border-t-transparent rounded-full" />
@@ -223,7 +223,12 @@ export default function GroupDetailPage() {
         </div>
       )}
 
-      {tab === "balances" && balances && (
+      {tab === "balances" && balancesLoading && (
+        <div className="flex items-center justify-center py-12">
+          <div className="animate-spin w-8 h-8 border-4 border-emerald-600 border-t-transparent rounded-full" />
+        </div>
+      )}
+      {tab === "balances" && !balancesLoading && balances && (
         <div className="space-y-4">
           {balances.simplifiedDebts.length > 0 ? (
             <>

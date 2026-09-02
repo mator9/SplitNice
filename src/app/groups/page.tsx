@@ -6,6 +6,7 @@ import { useFetch } from "@/lib/hooks";
 import Card from "@/components/ui/Card";
 import Button from "@/components/ui/Button";
 import EmptyState from "@/components/ui/EmptyState";
+import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import Modal from "@/components/ui/Modal";
 import Input from "@/components/ui/Input";
 import Select from "@/components/ui/Select";
@@ -23,7 +24,7 @@ interface Group {
 }
 
 export default function GroupsPage() {
-  const { data: groups, refetch } = useFetch<Group[]>("/api/groups");
+  const { data: groups, loading: groupsLoading, refetch } = useFetch<Group[]>("/api/groups");
   const [showCreate, setShowCreate] = useState(false);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -66,7 +67,9 @@ export default function GroupsPage() {
         </Button>
       </div>
 
-      {groups && groups.length > 0 ? (
+      {groupsLoading ? (
+        <LoadingSpinner />
+      ) : groups && groups.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {groups.map((group) => (
             <Link key={group.id} href={`/groups/${group.id}`}>

@@ -6,6 +6,7 @@ import Card from "@/components/ui/Card";
 import Avatar from "@/components/ui/Avatar";
 import Button from "@/components/ui/Button";
 import EmptyState from "@/components/ui/EmptyState";
+import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import Link from "next/link";
 import { useState } from "react";
 import AddExpenseModal from "@/components/AddExpenseModal";
@@ -41,9 +42,9 @@ interface Expense {
 
 export default function DashboardPage() {
   const { data: session } = useSession();
-  const { data: balances } = useFetch<Balance>("/api/balances");
-  const { data: groups } = useFetch<Group[]>("/api/groups");
-  const { data: expenses } = useFetch<Expense[]>("/api/expenses?limit=5");
+  const { data: balances, loading: balancesLoading } = useFetch<Balance>("/api/balances");
+  const { data: groups, loading: groupsLoading } = useFetch<Group[]>("/api/groups");
+  const { data: expenses, loading: expensesLoading } = useFetch<Expense[]>("/api/expenses?limit=5");
   const [showAddExpense, setShowAddExpense] = useState(false);
 
   const netNum = parseFloat(balances?.net || "0");
@@ -68,17 +69,29 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <Card className="p-5">
           <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">You owe</p>
-          <p className="text-2xl font-bold text-orange-600">${balances?.youOwe || "0.00"}</p>
+          {balancesLoading ? (
+            <div className="h-8 w-24 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+          ) : (
+            <p className="text-2xl font-bold text-orange-600">${balances?.youOwe || "0.00"}</p>
+          )}
         </Card>
         <Card className="p-5">
           <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">You are owed</p>
-          <p className="text-2xl font-bold text-emerald-600">${balances?.youAreOwed || "0.00"}</p>
+          {balancesLoading ? (
+            <div className="h-8 w-24 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+          ) : (
+            <p className="text-2xl font-bold text-emerald-600">${balances?.youAreOwed || "0.00"}</p>
+          )}
         </Card>
         <Card className="p-5">
           <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Net balance</p>
-          <p className={`text-2xl font-bold ${netNum >= 0 ? "text-emerald-600" : "text-orange-600"}`}>
-            {netNum >= 0 ? "+" : ""}${balances?.net || "0.00"}
-          </p>
+          {balancesLoading ? (
+            <div className="h-8 w-24 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+          ) : (
+            <p className={`text-2xl font-bold ${netNum >= 0 ? "text-emerald-600" : "text-orange-600"}`}>
+              {netNum >= 0 ? "+" : ""}${balances?.net || "0.00"}
+            </p>
+          )}
         </Card>
       </div>
 
@@ -120,7 +133,9 @@ export default function DashboardPage() {
               View all
             </Link>
           </div>
-          {expenses && expenses.length > 0 ? (
+          {expensesLoading ? (
+            <LoadingSpinner />
+          ) : expenses && expenses.length > 0 ? (
             <div className="space-y-3">
               {expenses.map((expense) => (
                 <div key={expense.id} className="flex items-center justify-between py-2 border-b border-gray-100 dark:border-gray-700 last:border-0">
@@ -156,7 +171,9 @@ export default function DashboardPage() {
               View all
             </Link>
           </div>
-          {groups && groups.length > 0 ? (
+          {groupsLoading ? (
+            <LoadingSpinner />
+          ) : groups && groups.length > 0 ? (
             <div className="space-y-3">
               {groups.slice(0, 5).map((group) => (
                 <Link

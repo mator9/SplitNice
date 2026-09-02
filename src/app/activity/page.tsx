@@ -4,6 +4,7 @@ import { useFetch } from "@/lib/hooks";
 import Card from "@/components/ui/Card";
 import Avatar from "@/components/ui/Avatar";
 import EmptyState from "@/components/ui/EmptyState";
+import LoadingSpinner from "@/components/ui/LoadingSpinner";
 
 interface Activity {
   id: string;
@@ -17,7 +18,7 @@ interface Activity {
 }
 
 export default function ActivityPage() {
-  const { data: activities } = useFetch<Activity[]>("/api/activity");
+  const { data: activities, loading } = useFetch<Activity[]>("/api/activity");
 
   const typeIcon = (type: string) => {
     switch (type) {
@@ -62,7 +63,9 @@ export default function ActivityPage() {
     <div className="space-y-6">
       <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Activity</h1>
 
-      {activities && activities.length > 0 ? (
+      {loading ? (
+        <LoadingSpinner />
+      ) : activities && activities.length > 0 ? (
         <div className="space-y-3">
           {activities.map((activity) => (
             <Card key={activity.id} className="p-4">

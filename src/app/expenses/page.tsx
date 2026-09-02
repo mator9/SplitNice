@@ -8,6 +8,7 @@ import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import Avatar from "@/components/ui/Avatar";
 import EmptyState from "@/components/ui/EmptyState";
+import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import AddExpenseModal from "@/components/AddExpenseModal";
 
 interface Expense {
@@ -26,6 +27,7 @@ interface Expense {
 export default function ExpensesPage() {
   const { data: session } = useSession();
   const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [expensesLoading, setExpensesLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [sortBy, setSortBy] = useState("date");
   const [sortOrder, setSortOrder] = useState("desc");
@@ -33,6 +35,7 @@ export default function ExpensesPage() {
   const debouncedSearch = useDebounce(search, 300);
 
   useEffect(() => {
+    setExpensesLoading(true);
     const params = new URLSearchParams();
     if (debouncedSearch) params.set("q", debouncedSearch);
     params.set("sortBy", sortBy);
@@ -40,8 +43,13 @@ export default function ExpensesPage() {
 
     fetch(`/api/search?${params}`)
       .then((r) => r.json())
-      .then(setExpenses)
-      .catch(() => {});
+      .then((data) => {
+        setExpenses(data);
+        setExpensesLoading(false);
+      })
+      .catch(() => {
+        setExpensesLoading(false);
+      });
   }, [debouncedSearch, sortBy, sortOrder]);
 
   const handleDelete = async (id: string) => {
@@ -88,7 +96,9 @@ export default function ExpensesPage() {
         </div>
       </div>
 
-      {expenses.length > 0 ? (
+      {expensesLoading ? (
+        <LoadingSpinner />
+      ) : expenses.length > 0 ? (
         <div className="space-y-3">
           {expenses.map((expense) => {
             const myShare = expense.splits.find((s) => s.userId === session?.user?.id);
@@ -146,9 +156,9 @@ export default function ExpensesPage() {
         </div>
       ) : (
         <EmptyState
-          title={search ? "No matching expenses" : "No expenses yet"}
-          description={search ? "Try a different search term" : "Add your first expense to get started"}
-          action={!search ? <Button onClick={() => setShowAddExpense(true)}>Add Expense</Button> : undefined}
+          title={debouncedSearch ? "No matching expenses" : "No expenses yet"}
+          description={debouncedSearch ? "Try a different search term" : "Add your first expense to get started"}
+          action={!debouncedSearch ? <Button onClick={() => setShowAddExpense(true)}>Add Expense</Button> : undefined}
         />
       )}
 
