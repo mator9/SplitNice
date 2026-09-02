@@ -21,6 +21,8 @@ export const config = {
     "/api/expenses/:path*",
     "/api/settlements/:path*",
     "/api/friends/:path*",
+    "/api/activity",
+    "/api/activity/:path*",
     "/api/notifications/:path*",
     "/api/search/:path*",
   ],
