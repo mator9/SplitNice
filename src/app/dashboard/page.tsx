@@ -10,7 +10,7 @@ import { BalanceSkeleton, ListItemSkeleton } from "@/components/ui/Skeleton";
 import Link from "next/link";
 import { useState } from "react";
 import AddExpenseModal from "@/components/AddExpenseModal";
-import { formatMoney } from "@/lib/money";
+import { formatMoney, formatCalendarDate } from "@/lib/money";
 
 interface CurrencyBalance {
   currency: string;
@@ -172,7 +172,7 @@ export default function DashboardPage() {
                       {expense.description}
                     </p>
                     <p className="text-xs text-gray-500 mt-0.5">
-                      {expense.paidBy.name} &middot; {new Date(expense.date).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+                      {expense.paidBy.name} &middot; {formatCalendarDate(expense.date)}
                       {expense.group && ` · ${expense.group.name}`}
                     </p>
                   </div>

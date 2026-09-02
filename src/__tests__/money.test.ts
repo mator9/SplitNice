@@ -3,6 +3,7 @@ import {
   Decimal,
   toDecimal,
   formatMoney,
+  formatCalendarDate,
   calculateEqualSplit,
   calculateExactSplit,
   calculatePercentageSplit,
@@ -541,5 +542,40 @@ describe("edge cases", () => {
     const total = result.reduce((sum, r) => sum.plus(r.amount), new Decimal(0));
     expect(total.toString()).toBe("100");
     expect(result).toHaveLength(20);
+  });
+});
+
+describe("formatCalendarDate", () => {
+  it("parses YYYY-MM-DD as local date without timezone shift", () => {
+    const result = formatCalendarDate("2026-09-02");
+    expect(result).toContain("2");
+    expect(result).not.toContain("1");
+  });
+
+  it("handles ISO string with time component", () => {
+    const result = formatCalendarDate("2026-09-02T00:00:00.000Z");
+    expect(result).toContain("2");
+    expect(result).not.toContain("1");
+  });
+
+  it("accepts custom Intl.DateTimeFormatOptions", () => {
+    const result = formatCalendarDate("2026-01-15", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+    expect(result).toContain("January");
+    expect(result).toContain("15");
+    expect(result).toContain("2026");
+  });
+
+  it("formats Dec 31 correctly (no year roll-back)", () => {
+    const result = formatCalendarDate("2026-12-31");
+    expect(result).toContain("31");
+  });
+
+  it("formats Jan 1 correctly (no year roll-forward)", () => {
+    const result = formatCalendarDate("2026-01-01");
+    expect(result).toContain("1");
   });
 });

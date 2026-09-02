@@ -12,7 +12,7 @@ import Input from "@/components/ui/Input";
 import EmptyState from "@/components/ui/EmptyState";
 import Skeleton, { BalanceSkeleton, ListItemSkeleton } from "@/components/ui/Skeleton";
 import AddExpenseModal from "@/components/AddExpenseModal";
-import { formatMoney } from "@/lib/money";
+import { formatMoney, formatCalendarDate } from "@/lib/money";
 import { extractApiError } from "@/lib/api-error";
 
 interface Friend {
@@ -306,7 +306,7 @@ export default function GroupDetailPage() {
                     <div className="min-w-0">
                       <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">{expense.description}</p>
                       <p className="text-xs text-gray-500 mt-0.5">
-                        {expense.paidBy.name} paid · {new Date(expense.date).toLocaleDateString(undefined, { month: "short", day: "numeric" })} · {expense.splitType.toLowerCase()}
+                        {expense.paidBy.name} paid · {formatCalendarDate(expense.date)} · {expense.splitType.toLowerCase()}
                       </p>
                     </div>
                   </div>

@@ -49,22 +49,13 @@ export async function signup(
     await signIn("credentials", {
       email,
       password,
-      redirectTo: "/dashboard",
+      redirect: false,
     });
-  } catch (err: unknown) {
-    if (
-      err &&
-      typeof err === "object" &&
-      "digest" in err &&
-      typeof (err as Record<string, unknown>).digest === "string" &&
-      ((err as Record<string, unknown>).digest as string).startsWith("NEXT_REDIRECT")
-    ) {
-      throw err;
-    }
+  } catch {
     redirect(`/login?registered=1&email=${encodeURIComponent(email)}`);
   }
 
-  return {};
+  redirect("/dashboard");
 }
 
 export async function credentialsLogin(
@@ -82,20 +73,11 @@ export async function credentialsLogin(
     await signIn("credentials", {
       email,
       password,
-      redirectTo: "/dashboard",
+      redirect: false,
     });
-  } catch (err: unknown) {
-    if (
-      err &&
-      typeof err === "object" &&
-      "digest" in err &&
-      typeof (err as Record<string, unknown>).digest === "string" &&
-      ((err as Record<string, unknown>).digest as string).startsWith("NEXT_REDIRECT")
-    ) {
-      throw err;
-    }
+  } catch {
     return { error: "Invalid email or password", email };
   }
 
-  return {};
+  redirect("/dashboard");
 }
