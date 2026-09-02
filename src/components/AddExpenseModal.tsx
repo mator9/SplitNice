@@ -43,7 +43,6 @@ export default function AddExpenseModal({ onClose, onSuccess, groupId }: AddExpe
       .then((r) => r.json())
       .then(setGroups)
       .catch(() => {});
-     
   }, []);
 
   useEffect(() => {
@@ -73,7 +72,6 @@ export default function AddExpenseModal({ onClose, onSuccess, groupId }: AddExpe
         },
       ]);
     }
-     
   }, [selectedGroupId, groups, session]);
 
   const handleGroupChange = useCallback(
@@ -126,6 +124,8 @@ export default function AddExpenseModal({ onClose, onSuccess, groupId }: AddExpe
     }
   };
 
+  const isValid = description.trim().length > 0 && parseFloat(amount) > 0;
+
   return (
     <Modal isOpen onClose={onClose} title="Add Expense" size="lg">
       <div className="space-y-4">
@@ -143,7 +143,7 @@ export default function AddExpenseModal({ onClose, onSuccess, groupId }: AddExpe
           required
         />
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 gap-3">
           <Input
             label="Amount"
             type="number"
@@ -160,16 +160,16 @@ export default function AddExpenseModal({ onClose, onSuccess, groupId }: AddExpe
             onChange={(e) => setCurrency(e.target.value)}
             options={[
               { value: "USD", label: "USD ($)" },
-              { value: "EUR", label: "EUR" },
-              { value: "GBP", label: "GBP" },
-              { value: "INR", label: "INR" },
+              { value: "EUR", label: "EUR (€)" },
+              { value: "GBP", label: "GBP (£)" },
+              { value: "INR", label: "INR (₹)" },
               { value: "CAD", label: "CAD" },
               { value: "AUD", label: "AUD" },
             ]}
           />
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 gap-3">
           <Input
             label="Date"
             type="date"
@@ -178,7 +178,7 @@ export default function AddExpenseModal({ onClose, onSuccess, groupId }: AddExpe
           />
           <Input
             label="Category (optional)"
-            placeholder="e.g. Food, Transport"
+            placeholder="e.g. Food"
             value={category}
             onChange={(e) => setCategory(e.target.value)}
           />
@@ -207,13 +207,13 @@ export default function AddExpenseModal({ onClose, onSuccess, groupId }: AddExpe
         />
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
             Participants ({participants.length})
           </label>
-          <div className="space-y-2 max-h-48 overflow-y-auto">
+          <div className="space-y-1.5 max-h-40 overflow-y-auto overscroll-contain">
             {participants.map((p, idx) => (
-              <div key={p.userId} className="flex items-center gap-3 bg-gray-50 dark:bg-gray-700/30 rounded-lg p-3">
-                <span className="text-sm font-medium text-gray-900 dark:text-gray-100 flex-1 truncate">
+              <div key={p.userId} className="flex items-center gap-2 bg-gray-50 dark:bg-slate-700/20 rounded-lg p-2.5">
+                <span className="text-xs font-medium text-gray-900 dark:text-gray-100 flex-1 truncate">
                   {p.name}
                 </span>
                 {splitType === "EXACT" && (
@@ -221,7 +221,7 @@ export default function AddExpenseModal({ onClose, onSuccess, groupId }: AddExpe
                     type="number"
                     step="0.01"
                     placeholder="Amount"
-                    className="w-24 px-2 py-1 border rounded text-sm dark:bg-gray-800 dark:border-gray-600"
+                    className="w-20 px-2 py-1 border border-gray-200 rounded-md text-xs dark:bg-slate-800 dark:border-slate-600 focus:outline-none focus:ring-1 focus:ring-emerald-500"
                     value={p.amount}
                     onChange={(e) => {
                       const newP = [...participants];
@@ -236,7 +236,7 @@ export default function AddExpenseModal({ onClose, onSuccess, groupId }: AddExpe
                       type="number"
                       step="0.01"
                       placeholder="%"
-                      className="w-20 px-2 py-1 border rounded text-sm dark:bg-gray-800 dark:border-gray-600"
+                      className="w-16 px-2 py-1 border border-gray-200 rounded-md text-xs dark:bg-slate-800 dark:border-slate-600 focus:outline-none focus:ring-1 focus:ring-emerald-500"
                       value={p.percentage}
                       onChange={(e) => {
                         const newP = [...participants];
@@ -244,7 +244,7 @@ export default function AddExpenseModal({ onClose, onSuccess, groupId }: AddExpe
                         setParticipants(newP);
                       }}
                     />
-                    <span className="text-sm text-gray-500">%</span>
+                    <span className="text-xs text-gray-400">%</span>
                   </div>
                 )}
                 {splitType === "SHARES" && (
@@ -252,7 +252,7 @@ export default function AddExpenseModal({ onClose, onSuccess, groupId }: AddExpe
                     <input
                       type="number"
                       min="1"
-                      className="w-16 px-2 py-1 border rounded text-sm dark:bg-gray-800 dark:border-gray-600"
+                      className="w-14 px-2 py-1 border border-gray-200 rounded-md text-xs dark:bg-slate-800 dark:border-slate-600 focus:outline-none focus:ring-1 focus:ring-emerald-500"
                       value={p.shares}
                       onChange={(e) => {
                         const newP = [...participants];
@@ -260,15 +260,15 @@ export default function AddExpenseModal({ onClose, onSuccess, groupId }: AddExpe
                         setParticipants(newP);
                       }}
                     />
-                    <span className="text-sm text-gray-500">shares</span>
+                    <span className="text-xs text-gray-400">shares</span>
                   </div>
                 )}
                 {participants.length > 1 && (
                   <button
                     onClick={() => setParticipants(participants.filter((_, i) => i !== idx))}
-                    className="text-gray-400 hover:text-red-500 transition-colors"
+                    className="text-gray-300 hover:text-red-500 transition-colors p-0.5"
                   >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                     </svg>
                   </button>
@@ -285,11 +285,11 @@ export default function AddExpenseModal({ onClose, onSuccess, groupId }: AddExpe
           onChange={(e) => setNotes(e.target.value)}
         />
 
-        <div className="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
+        <div className="flex justify-end gap-2 pt-3 border-t border-gray-100 dark:border-slate-700 sticky bottom-0 bg-white dark:bg-slate-800">
           <Button variant="secondary" onClick={onClose}>
             Cancel
           </Button>
-          <Button onClick={handleSubmit} loading={loading} disabled={!description || !amount}>
+          <Button onClick={handleSubmit} loading={loading} disabled={!isValid}>
             Add Expense
           </Button>
         </div>
