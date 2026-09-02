@@ -12,6 +12,7 @@ import Input from "@/components/ui/Input";
 import EmptyState from "@/components/ui/EmptyState";
 import Skeleton, { BalanceSkeleton, ListItemSkeleton } from "@/components/ui/Skeleton";
 import AddExpenseModal from "@/components/AddExpenseModal";
+import { formatMoney } from "@/lib/money";
 
 interface GroupDetail {
   id: string;
@@ -36,14 +37,24 @@ interface GroupDetail {
   }>;
 }
 
+interface CurrencyBalance {
+  currency: string;
+  youOwe: string;
+  youAreOwed: string;
+  net: string;
+}
+
 interface BalanceData {
-  myBalance: { youOwe: string; youAreOwed: string; net: string };
-  simplifiedDebts: Array<{ from: string; to: string; amount: string }>;
-  memberBalances: Array<{
-    user: { id: string; name: string; email: string; image?: string };
-    youOwe: string;
-    youAreOwed: string;
-    net: string;
+  balanceByCurrency: CurrencyBalance[];
+  simplifiedDebts: Array<{ from: string; to: string; amount: string; currency: string }>;
+  memberBalancesByCurrency: Array<{
+    currency: string;
+    balances: Array<{
+      user: { id: string; name: string; email: string; image?: string };
+      youOwe: string;
+      youAreOwed: string;
+      net: string;
+    }>;
   }>;
 }
 
@@ -149,7 +160,7 @@ export default function GroupDetailPage() {
     router.push("/groups");
   };
 
-  const netNum = parseFloat(balances?.myBalance?.net || "0");
+  const currencyBalances = balances?.balanceByCurrency || [];
 
   return (
     <div className="space-y-5">
@@ -190,17 +201,36 @@ export default function GroupDetailPage() {
         <div className="grid grid-cols-3 gap-3">
           <Card className="p-3.5">
             <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">You owe</p>
-            <p className="text-base sm:text-lg font-bold text-orange-600 mt-0.5 tabular-nums">${balances.myBalance.youOwe}</p>
+            {currencyBalances.length > 0 ? currencyBalances.map((cb) => (
+              <p key={cb.currency} className="text-base sm:text-lg font-bold text-orange-600 mt-0.5 tabular-nums">
+                {formatMoney(cb.youOwe, cb.currency)}
+              </p>
+            )) : (
+              <p className="text-base sm:text-lg font-bold text-orange-600 mt-0.5 tabular-nums">{formatMoney("0.00")}</p>
+            )}
           </Card>
           <Card className="p-3.5">
             <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Owed to you</p>
-            <p className="text-base sm:text-lg font-bold text-emerald-600 mt-0.5 tabular-nums">${balances.myBalance.youAreOwed}</p>
+            {currencyBalances.length > 0 ? currencyBalances.map((cb) => (
+              <p key={cb.currency} className="text-base sm:text-lg font-bold text-emerald-600 mt-0.5 tabular-nums">
+                {formatMoney(cb.youAreOwed, cb.currency)}
+              </p>
+            )) : (
+              <p className="text-base sm:text-lg font-bold text-emerald-600 mt-0.5 tabular-nums">{formatMoney("0.00")}</p>
+            )}
           </Card>
           <Card className="p-3.5">
             <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Net</p>
-            <p className={`text-base sm:text-lg font-bold mt-0.5 tabular-nums ${netNum >= 0 ? "text-emerald-600" : "text-orange-600"}`}>
-              {netNum >= 0 ? "+" : ""}${balances.myBalance.net}
-            </p>
+            {currencyBalances.length > 0 ? currencyBalances.map((cb) => {
+              const netNum = parseFloat(cb.net);
+              return (
+                <p key={cb.currency} className={`text-base sm:text-lg font-bold mt-0.5 tabular-nums ${netNum >= 0 ? "text-emerald-600" : "text-orange-600"}`}>
+                  {netNum >= 0 ? "+" : ""}{formatMoney(cb.net, cb.currency)}
+                </p>
+              );
+            }) : (
+              <p className="text-base sm:text-lg font-bold text-emerald-600 mt-0.5 tabular-nums">+{formatMoney("0.00")}</p>
+            )}
           </Card>
         </div>
       )}
@@ -239,7 +269,7 @@ export default function GroupDetailPage() {
                     </div>
                   </div>
                   <span className="text-sm font-semibold text-gray-900 dark:text-gray-100 ml-3 tabular-nums">
-                    ${parseFloat(expense.amount).toFixed(2)}
+                    {formatMoney(expense.amount, expense.currency)}
                   </span>
                 </div>
               ))}
@@ -272,7 +302,7 @@ export default function GroupDetailPage() {
                       <Avatar src={toMember?.user.image} name={toMember?.user.name} size="sm" />
                       <span className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">{toMember?.user.name || "Unknown"}</span>
                     </div>
-                    <span className="font-semibold text-sm text-orange-600 tabular-nums ml-3">${debt.amount}</span>
+                    <span className="font-semibold text-sm text-orange-600 tabular-nums ml-3">{formatMoney(debt.amount, debt.currency)}</span>
                   </div>
                 );
               })}

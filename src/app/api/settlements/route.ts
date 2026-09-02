@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { createSettlementSchema } from "@/lib/validations";
-import { toDecimal } from "@/lib/money";
+import { toDecimal, formatMoney } from "@/lib/money";
 
 export async function GET(req: NextRequest) {
   const session = await auth();
@@ -71,7 +71,7 @@ export async function POST(req: NextRequest) {
     await tx.activity.create({
       data: {
         type: "SETTLEMENT_CREATED",
-        description: `recorded a $${amount.toFixed(2)} payment`,
+        description: `recorded a ${formatMoney(amount, data.currency)} payment`,
         userId: currentUserId,
         groupId: data.groupId || null,
         settlementId: settlement.id,
@@ -85,7 +85,7 @@ export async function POST(req: NextRequest) {
         userId: otherUserId,
         type: "SETTLEMENT_RECORDED",
         title: "Settlement recorded",
-        message: `${currentUserName || "Someone"} recorded a $${amount.toFixed(2)} payment`,
+        message: `${currentUserName || "Someone"} recorded a ${formatMoney(amount, data.currency)} payment`,
         link: "/activity",
       },
     });
