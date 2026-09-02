@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
+import { useCallback, useState } from "react";
 import Avatar from "@/components/ui/Avatar";
 
 const navItems = [
@@ -66,6 +67,18 @@ const navItems = [
 export default function Sidebar() {
   const pathname = usePathname();
   const { data: session } = useSession();
+  const [signingOut, setSigningOut] = useState(false);
+
+  const handleSignOut = useCallback(async () => {
+    if (signingOut) return;
+    setSigningOut(true);
+    try {
+      await signOut({ redirect: false });
+      window.location.assign("/login");
+    } catch {
+      window.location.assign("/login");
+    }
+  }, [signingOut]);
 
   return (
     <aside className="hidden lg:flex lg:flex-col lg:w-60 bg-white dark:bg-slate-800/50 border-r border-gray-100 dark:border-slate-700/60 h-screen sticky top-0">
@@ -109,10 +122,12 @@ export default function Sidebar() {
             </div>
           </div>
           <button
-            onClick={() => signOut({ callbackUrl: "/" })}
-            className="w-full mt-1 px-3 py-1.5 text-[13px] text-gray-500 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-slate-700/40 rounded-lg text-left transition-colors"
+            type="button"
+            onClick={handleSignOut}
+            disabled={signingOut}
+            className="w-full mt-1 px-3 py-1.5 text-[13px] text-gray-500 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-slate-700/40 rounded-lg text-left transition-colors disabled:opacity-50"
           >
-            Sign out
+            {signingOut ? "Signing out…" : "Sign out"}
           </button>
         </div>
       )}
