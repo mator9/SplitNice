@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useFetch } from "@/lib/hooks";
+import { extractApiError } from "@/lib/api-error";
 import Card from "@/components/ui/Card";
 import Button from "@/components/ui/Button";
 import Avatar from "@/components/ui/Avatar";
@@ -35,7 +36,7 @@ export default function FriendsPage() {
       });
       if (!res.ok) {
         const d = await res.json();
-        throw new Error(d.error || "Failed");
+        throw new Error(extractApiError(d.error, "Failed to send friend request"));
       }
       setShowAdd(false);
       setEmail("");

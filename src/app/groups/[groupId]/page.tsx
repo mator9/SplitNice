@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useFetch } from "@/lib/hooks";
@@ -13,6 +13,18 @@ import EmptyState from "@/components/ui/EmptyState";
 import Skeleton, { BalanceSkeleton, ListItemSkeleton } from "@/components/ui/Skeleton";
 import AddExpenseModal from "@/components/AddExpenseModal";
 import { formatMoney } from "@/lib/money";
+import { extractApiError } from "@/lib/api-error";
+
+interface Friend {
+  id: string;
+  name: string;
+  email: string;
+  image?: string;
+}
+
+interface FriendsData {
+  friends: Friend[];
+}
 
 interface GroupDetail {
   id: string;
@@ -76,6 +88,36 @@ export default function GroupDetailPage() {
   const [settleLoading, setSettleLoading] = useState(false);
   const [tab, setTab] = useState<"expenses" | "balances" | "members">("expenses");
 
+  const [friends, setFriends] = useState<Friend[]>([]);
+  const [friendsLoading, setFriendsLoading] = useState(false);
+
+  useEffect(() => {
+    if (!showAddMember) return;
+    setFriendsLoading(true);
+    fetch("/api/friends")
+      .then((r) => (r.ok ? r.json() : { friends: [] }))
+      .then((d: FriendsData) => setFriends(d.friends ?? []))
+      .catch(() => setFriends([]))
+      .finally(() => setFriendsLoading(false));
+  }, [showAddMember]);
+
+  const memberIds = useMemo(
+    () => new Set(group?.members.map((m) => m.user.id) ?? []),
+    [group?.members]
+  );
+
+  const availableFriends = useMemo(() => {
+    const query = memberEmail.toLowerCase().trim();
+    return friends
+      .filter((f) => !memberIds.has(f.id))
+      .filter(
+        (f) =>
+          !query ||
+          (f.name && f.name.toLowerCase().includes(query)) ||
+          f.email.toLowerCase().includes(query)
+      );
+  }, [friends, memberIds, memberEmail]);
+
   if (loadingGroup) {
     return (
       <div className="space-y-5">
@@ -116,7 +158,7 @@ export default function GroupDetailPage() {
       });
       if (!res.ok) {
         const data = await res.json();
-        throw new Error(data.error || "Failed to add member");
+        throw new Error(extractApiError(data.error, "Failed to add member"));
       }
       setShowAddMember(false);
       setMemberEmail("");
@@ -359,7 +401,7 @@ export default function GroupDetailPage() {
       )}
 
       {showAddMember && (
-        <Modal isOpen onClose={() => setShowAddMember(false)} title="Add Member">
+        <Modal isOpen onClose={() => { setShowAddMember(false); setMemberEmail(""); setAddMemberError(""); }} title="Add Member">
           <div className="space-y-4">
             {addMemberError && (
               <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-sm text-red-700 dark:text-red-400">
@@ -373,8 +415,51 @@ export default function GroupDetailPage() {
               value={memberEmail}
               onChange={(e) => setMemberEmail(e.target.value)}
             />
+
+            {friendsLoading ? (
+              <div className="space-y-2">
+                <ListItemSkeleton />
+                <ListItemSkeleton />
+              </div>
+            ) : availableFriends.length > 0 ? (
+              <div>
+                <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5">Pick a friend</p>
+                <div className="max-h-40 overflow-y-auto rounded-lg border border-gray-100 dark:border-slate-700 divide-y divide-gray-50 dark:divide-slate-700/40">
+                  {availableFriends.map((f) => (
+                    <button
+                      key={f.id}
+                      type="button"
+                      onClick={() => setMemberEmail(f.email)}
+                      className="w-full flex items-center gap-2.5 px-3 py-2 hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors text-left"
+                    >
+                      <Avatar src={f.image} name={f.name} size="sm" />
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">{f.name || f.email}</p>
+                        <p className="text-xs text-gray-500 truncate">{f.email}</p>
+                      </div>
+                      {memberEmail === f.email && (
+                        <svg className="w-4 h-4 text-emerald-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ) : friends.length === 0 && !friendsLoading ? (
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                No friends yet.{" "}
+                <a href="/friends" className="text-emerald-600 hover:underline">Add some on Friends</a>{" "}
+                or type an email above.
+              </p>
+            ) : memberEmail && availableFriends.length === 0 ? (
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                No matching friends — you can still add them by email.
+              </p>
+            ) : null}
+
             <div className="flex justify-end gap-2 pt-3 border-t border-gray-100 dark:border-slate-700">
-              <Button variant="secondary" onClick={() => setShowAddMember(false)}>Cancel</Button>
+              <Button variant="secondary" onClick={() => { setShowAddMember(false); setMemberEmail(""); setAddMemberError(""); }}>Cancel</Button>
               <Button onClick={handleAddMember} loading={addMemberLoading} disabled={!memberEmail}>Add</Button>
             </div>
           </div>
