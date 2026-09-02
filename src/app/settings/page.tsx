@@ -20,7 +20,7 @@ interface NotificationData {
 
 export default function SettingsPage() {
   const { data: session } = useSession();
-  const { data: notifData, refetch } = useFetch<NotificationData>("/api/notifications");
+  const { data: notifData, loading: notifLoading, refetch } = useFetch<NotificationData>("/api/notifications");
 
   const markAllRead = async () => {
     await fetch("/api/notifications", {
@@ -64,7 +64,11 @@ export default function SettingsPage() {
             </button>
           ) : null}
         </div>
-        {notifData?.notifications && notifData.notifications.length > 0 ? (
+        {notifLoading ? (
+          <div className="flex justify-center py-4">
+            <div className="animate-spin w-6 h-6 border-4 border-emerald-600 border-t-transparent rounded-full" />
+          </div>
+        ) : notifData?.notifications && notifData.notifications.length > 0 ? (
           <div className="space-y-3 max-h-96 overflow-y-auto">
             {notifData.notifications.map((notif) => (
               <div

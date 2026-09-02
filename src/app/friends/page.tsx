@@ -8,6 +8,7 @@ import Avatar from "@/components/ui/Avatar";
 import Input from "@/components/ui/Input";
 import Modal from "@/components/ui/Modal";
 import EmptyState from "@/components/ui/EmptyState";
+import LoadingSpinner from "@/components/ui/LoadingSpinner";
 
 interface FriendsData {
   friends: Array<{ id: string; name: string; email: string; image?: string }>;
@@ -16,7 +17,7 @@ interface FriendsData {
 }
 
 export default function FriendsPage() {
-  const { data, refetch } = useFetch<FriendsData>("/api/friends");
+  const { data, loading: friendsLoading, refetch } = useFetch<FriendsData>("/api/friends");
   const [showAdd, setShowAdd] = useState(false);
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
@@ -126,7 +127,9 @@ export default function FriendsPage() {
         <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">
           Your Friends {data?.friends ? `(${data.friends.length})` : ""}
         </h2>
-        {data?.friends && data.friends.length > 0 ? (
+        {friendsLoading ? (
+          <LoadingSpinner />
+        ) : data?.friends && data.friends.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {data.friends.map((friend) => (
               <Card key={friend.id} className="p-4">
