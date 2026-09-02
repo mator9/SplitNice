@@ -3,6 +3,7 @@ import {
   Decimal,
   toDecimal,
   formatMoney,
+  formatCalendarDate,
   calculateEqualSplit,
   calculateExactSplit,
   calculatePercentageSplit,
@@ -148,6 +149,17 @@ describe("calculateSharesSplit", () => {
     const total = result.reduce((sum, r) => sum.plus(r.amount), new Decimal(0));
     expect(total.toString()).toBe("100");
   });
+
+  it("defaults shares to 1 when 0 is provided", () => {
+    const result = calculateSharesSplit(toDecimal("100"), [
+      { userId: "a", shares: 0 },
+      { userId: "b", shares: 0 },
+    ]);
+    const total = result.reduce((sum, r) => sum.plus(r.amount), new Decimal(0));
+    expect(total.toString()).toBe("100");
+    expect(result[0].amount.toString()).toBe("50");
+    expect(result[1].amount.toString()).toBe("50");
+  });
 });
 
 describe("calculateSplit", () => {
@@ -164,6 +176,50 @@ describe("calculateSplit", () => {
       { userId: "b", amount: "30" },
     ]);
     expect(exact[0].amount.toString()).toBe("70");
+  });
+
+  it("throws for percentage splits that don't sum to 100", () => {
+    expect(() =>
+      calculateSplit("PERCENTAGE", toDecimal("100"), [
+        { userId: "a", percentage: "50" },
+        { userId: "b", percentage: "30" },
+      ])
+    ).toThrow("must sum to 100");
+  });
+
+  it("throws for exact splits that don't match total", () => {
+    expect(() =>
+      calculateSplit("EXACT", toDecimal("100"), [
+        { userId: "a", amount: "60" },
+        { userId: "b", amount: "20" },
+      ])
+    ).toThrow("don't equal total");
+  });
+
+  it("throws for unknown split type", () => {
+    expect(() =>
+      calculateSplit("INVALID" as "EQUAL", toDecimal("100"), [{ userId: "a" }])
+    ).toThrow("Unknown split type");
+  });
+
+  it("calculates shares split correctly via dispatcher", () => {
+    const result = calculateSplit("SHARES", toDecimal("100"), [
+      { userId: "a", shares: 3 },
+      { userId: "b", shares: 1 },
+    ]);
+    const total = result.reduce((sum, r) => sum.plus(r.amount), new Decimal(0));
+    expect(total.toString()).toBe("100");
+    expect(result[0].amount.toString()).toBe("75");
+    expect(result[1].amount.toString()).toBe("25");
+  });
+
+  it("percentage split with empty percentages throws (sum is 0, not 100)", () => {
+    expect(() =>
+      calculateSplit("PERCENTAGE", toDecimal("100"), [
+        { userId: "a" },
+        { userId: "b" },
+      ])
+    ).toThrow("must sum to 100");
   });
 });
 
@@ -486,5 +542,40 @@ describe("edge cases", () => {
     const total = result.reduce((sum, r) => sum.plus(r.amount), new Decimal(0));
     expect(total.toString()).toBe("100");
     expect(result).toHaveLength(20);
+  });
+});
+
+describe("formatCalendarDate", () => {
+  it("parses YYYY-MM-DD as local date without timezone shift", () => {
+    const result = formatCalendarDate("2026-09-02");
+    expect(result).toContain("2");
+    expect(result).not.toContain("1");
+  });
+
+  it("handles ISO string with time component", () => {
+    const result = formatCalendarDate("2026-09-02T00:00:00.000Z");
+    expect(result).toContain("2");
+    expect(result).not.toContain("1");
+  });
+
+  it("accepts custom Intl.DateTimeFormatOptions", () => {
+    const result = formatCalendarDate("2026-01-15", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+    expect(result).toContain("January");
+    expect(result).toContain("15");
+    expect(result).toContain("2026");
+  });
+
+  it("formats Dec 31 correctly (no year roll-back)", () => {
+    const result = formatCalendarDate("2026-12-31");
+    expect(result).toContain("31");
+  });
+
+  it("formats Jan 1 correctly (no year roll-forward)", () => {
+    const result = formatCalendarDate("2026-01-01");
+    expect(result).toContain("1");
   });
 });

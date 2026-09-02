@@ -32,6 +32,20 @@ export function currencySymbol(currency: string): string {
   return symbols[currency] || `${currency} `;
 }
 
+/**
+ * Formats a date-only string (YYYY-MM-DD or ISO with time) as a local
+ * calendar date, avoiding the off-by-one caused by UTC-midnight parsing.
+ */
+export function formatCalendarDate(
+  dateStr: string,
+  options?: Intl.DateTimeFormatOptions
+): string {
+  const datePart = dateStr.split("T")[0];
+  const [year, month, day] = datePart.split("-").map(Number);
+  const date = new Date(year, month - 1, day);
+  return date.toLocaleDateString(undefined, options ?? { month: "short", day: "numeric" });
+}
+
 export interface SplitInput {
   userId: string;
   amount?: string;

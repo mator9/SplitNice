@@ -32,6 +32,13 @@ export default function GroupsPage() {
   const [submitLoading, setSubmitLoading] = useState(false);
   const [error, setError] = useState("");
 
+  const resetGroupForm = () => {
+    setName("");
+    setDescription("");
+    setType("OTHER");
+    setError("");
+  };
+
   const handleCreate = async () => {
     if (!name) return;
     setSubmitLoading(true);
@@ -122,7 +129,7 @@ export default function GroupsPage() {
       )}
 
       {showCreate && (
-        <Modal isOpen onClose={() => setShowCreate(false)} title="Create Group">
+        <Modal isOpen onClose={() => { resetGroupForm(); setShowCreate(false); }} title="Create Group">
           <div className="space-y-4">
             {error && (
               <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-sm text-red-700 dark:text-red-400">
@@ -144,7 +151,7 @@ export default function GroupsPage() {
               ]}
             />
             <div className="flex justify-end gap-2 pt-3 border-t border-gray-100 dark:border-slate-700">
-              <Button variant="secondary" onClick={() => setShowCreate(false)}>Cancel</Button>
+              <Button variant="secondary" onClick={() => { resetGroupForm(); setShowCreate(false); }}>Cancel</Button>
               <Button onClick={handleCreate} loading={submitLoading} disabled={!name}>Create Group</Button>
             </div>
           </div>

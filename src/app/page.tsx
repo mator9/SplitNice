@@ -34,7 +34,7 @@ export default async function HomePage() {
             Track shared expenses, settle debts, and keep things fair with your friends, roommates, and travel buddies.
           </p>
           <Link
-            href="/login"
+            href="/signup"
             className="inline-flex items-center gap-2 px-6 py-3 mt-8 bg-emerald-600 text-white rounded-xl font-semibold text-sm sm:text-base hover:bg-emerald-700 transition-all shadow-md hover:shadow-lg active:scale-[0.98]"
           >
             Get Started Free

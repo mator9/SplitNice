@@ -10,7 +10,7 @@ import Avatar from "@/components/ui/Avatar";
 import EmptyState from "@/components/ui/EmptyState";
 import { ListItemSkeleton } from "@/components/ui/Skeleton";
 import AddExpenseModal from "@/components/AddExpenseModal";
-import { formatMoney } from "@/lib/money";
+import { formatMoney, formatCalendarDate } from "@/lib/money";
 
 interface Expense {
   id: string;
@@ -120,7 +120,7 @@ export default function ExpensesPage() {
                   <div className="flex items-center gap-1.5 text-xs text-gray-500 mt-0.5 flex-wrap">
                     <span>{expense.paidBy.name} paid</span>
                     <span className="text-gray-300">·</span>
-                    <span>{new Date(expense.date).toLocaleDateString(undefined, { month: "short", day: "numeric" })}</span>
+                    <span>{formatCalendarDate(expense.date)}</span>
                     {expense.group && (
                       <>
                         <span className="text-gray-300">·</span>

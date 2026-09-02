@@ -125,7 +125,29 @@ export default function AddExpenseModal({ onClose, onSuccess, groupId }: AddExpe
     }
   };
 
-  const isValid = description.trim().length > 0 && parseFloat(amount) > 0;
+  const percentageSum = participants.reduce(
+    (sum, p) => sum + (parseFloat(p.percentage) || 0),
+    0
+  );
+  const exactSum = participants.reduce(
+    (sum, p) => sum + (parseFloat(p.amount) || 0),
+    0
+  );
+
+  const splitValid =
+    splitType === "EQUAL" ||
+    (splitType === "PERCENTAGE" && Math.abs(percentageSum - 100) < 0.001) ||
+    (splitType === "EXACT" && parseFloat(amount) > 0 && Math.abs(exactSum - parseFloat(amount)) < 0.001) ||
+    (splitType === "SHARES" && participants.every((p) => p.shares >= 1));
+
+  const isValid = description.trim().length > 0 && parseFloat(amount) > 0 && splitValid;
+
+  const splitHint =
+    splitType === "PERCENTAGE" && Math.abs(percentageSum - 100) >= 0.001
+      ? `Percentages must add up to 100% (currently ${percentageSum.toFixed(2)}%)`
+      : splitType === "EXACT" && parseFloat(amount) > 0 && Math.abs(exactSum - parseFloat(amount)) >= 0.001
+        ? `Amounts must add up to ${parseFloat(amount).toFixed(2)} (currently ${exactSum.toFixed(2)})`
+        : "";
 
   return (
     <Modal isOpen onClose={onClose} title="Add Expense" size="lg">
@@ -277,6 +299,11 @@ export default function AddExpenseModal({ onClose, onSuccess, groupId }: AddExpe
               </div>
             ))}
           </div>
+          {splitHint && (
+            <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">
+              {splitHint}
+            </p>
+          )}
         </div>
 
         <Input
