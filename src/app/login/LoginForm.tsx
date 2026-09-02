@@ -1,13 +1,23 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useEffect, useRef } from "react";
 import { credentialsLogin, type AuthActionResult } from "@/app/(auth)/actions";
 
-export default function LoginForm() {
+export default function LoginForm({ defaultEmail = "" }: { defaultEmail?: string }) {
   const [state, formAction, pending] = useActionState<AuthActionResult | undefined, FormData>(
     credentialsLogin,
     undefined
   );
+
+  const passwordRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (state?.error) {
+      passwordRef.current?.focus();
+    }
+  }, [state]);
+
+  const emailValue = state?.email ?? defaultEmail;
 
   return (
     <form action={formAction} className="space-y-3.5">
@@ -27,6 +37,8 @@ export default function LoginForm() {
           type="email"
           required
           autoComplete="email"
+          defaultValue={emailValue}
+          key={emailValue}
           className="w-full px-3 py-2 border rounded-lg text-sm transition-all focus:outline-none focus:ring-2 focus:ring-emerald-500/40 focus:border-emerald-500 border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500"
           placeholder="you@example.com"
         />
@@ -37,6 +49,7 @@ export default function LoginForm() {
           Password
         </label>
         <input
+          ref={passwordRef}
           id="password"
           name="password"
           type="password"

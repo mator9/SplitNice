@@ -2,9 +2,17 @@ import { auth, signIn } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import LoginForm from "./LoginForm";
 
-export default async function LoginPage() {
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ registered?: string; email?: string }>;
+}) {
   const session = await auth();
   if (session) redirect("/dashboard");
+
+  const params = await searchParams;
+  const registered = params.registered === "1";
+  const prefillEmail = params.email || "";
 
   return (
     <div className="min-h-[100dvh] flex items-center justify-center bg-gradient-to-b from-white via-emerald-50/30 to-white dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 px-4">
@@ -18,7 +26,14 @@ export default async function LoginPage() {
         </div>
 
         <div className="bg-white dark:bg-slate-800/80 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700/60 p-6">
-          <LoginForm />
+          {registered && (
+            <div className="p-3 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 mb-4">
+              <p className="text-xs text-emerald-700 dark:text-emerald-400">
+                Account created successfully. Please sign in.
+              </p>
+            </div>
+          )}
+          <LoginForm defaultEmail={prefillEmail} />
 
           <div className="relative my-5">
             <div className="absolute inset-0 flex items-center">

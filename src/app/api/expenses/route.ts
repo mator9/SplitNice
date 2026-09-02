@@ -72,11 +72,18 @@ export async function POST(req: NextRequest) {
 
   const totalAmount = toDecimal(data.amount);
 
-  const splitResults = calculateSplit(
-    data.splitType,
-    totalAmount,
-    data.splits
-  );
+  let splitResults;
+  try {
+    splitResults = calculateSplit(
+      data.splitType,
+      totalAmount,
+      data.splits
+    );
+  } catch (err) {
+    const message =
+      err instanceof Error ? err.message : "Invalid split configuration";
+    return NextResponse.json({ error: message }, { status: 400 });
+  }
 
   const splitSum = splitResults.reduce(
     (sum, s) => sum.plus(s.amount),

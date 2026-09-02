@@ -4,6 +4,7 @@ import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { signIn } from "@/lib/auth";
+import { redirect } from "next/navigation";
 
 const signupSchema = z.object({
   name: z.string().min(1, "Name is required").max(100),
@@ -13,6 +14,7 @@ const signupSchema = z.object({
 
 export type AuthActionResult = {
   error?: string;
+  email?: string;
 };
 
 export async function signup(
@@ -43,11 +45,24 @@ export async function signup(
     data: { name, email, password: hash },
   });
 
-  await signIn("credentials", {
-    email,
-    password,
-    redirectTo: "/dashboard",
-  });
+  try {
+    await signIn("credentials", {
+      email,
+      password,
+      redirectTo: "/dashboard",
+    });
+  } catch (err: unknown) {
+    if (
+      err &&
+      typeof err === "object" &&
+      "digest" in err &&
+      typeof (err as Record<string, unknown>).digest === "string" &&
+      ((err as Record<string, unknown>).digest as string).startsWith("NEXT_REDIRECT")
+    ) {
+      throw err;
+    }
+    redirect(`/login?registered=1&email=${encodeURIComponent(email)}`);
+  }
 
   return {};
 }
@@ -60,7 +75,7 @@ export async function credentialsLogin(
   const password = formData.get("password") as string | null;
 
   if (!email || !password) {
-    return { error: "Email and password are required" };
+    return { error: "Email and password are required", email: email || "" };
   }
 
   try {
@@ -79,7 +94,7 @@ export async function credentialsLogin(
     ) {
       throw err;
     }
-    return { error: "Invalid email or password" };
+    return { error: "Invalid email or password", email };
   }
 
   return {};
