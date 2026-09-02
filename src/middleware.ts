@@ -1,7 +1,39 @@
+import { NextResponse } from "next/server";
 import NextAuth from "next-auth";
 import { authConfig } from "@/lib/auth.config";
 
-export default NextAuth(authConfig).auth;
+const { auth } = NextAuth({
+  ...authConfig,
+  callbacks: {
+    ...authConfig.callbacks,
+    authorized() {
+      return true;
+    },
+  },
+});
+
+const protectedPrefixes = [
+  "/dashboard",
+  "/groups",
+  "/expenses",
+  "/friends",
+  "/settings",
+  "/activity",
+];
+
+export default auth((req) => {
+  const isLoggedIn = !!req.auth?.user;
+  const { pathname } = req.nextUrl;
+  const isProtected = protectedPrefixes.some(
+    (p) => pathname === p || pathname.startsWith(p + "/"),
+  );
+
+  if (isProtected && !isLoggedIn) {
+    return NextResponse.redirect(new URL("/login", req.url));
+  }
+
+  return NextResponse.next();
+});
 
 export const config = {
   matcher: [
