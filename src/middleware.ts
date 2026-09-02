@@ -1,16 +1,5 @@
 import { NextResponse } from "next/server";
-import NextAuth from "next-auth";
-import { authConfig } from "@/lib/auth.config";
-
-const { auth } = NextAuth({
-  ...authConfig,
-  callbacks: {
-    ...authConfig.callbacks,
-    authorized() {
-      return true;
-    },
-  },
-});
+import type { NextRequest } from "next/server";
 
 const protectedPrefixes = [
   "/dashboard",
@@ -21,19 +10,28 @@ const protectedPrefixes = [
   "/activity",
 ];
 
-export default auth((req) => {
-  const isLoggedIn = !!req.auth?.user;
+function hasSessionCookie(req: NextRequest): boolean {
+  return (
+    req.cookies.has("authjs.session-token") ||
+    req.cookies.has("__Secure-authjs.session-token")
+  );
+}
+
+export default function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
   const isProtected = protectedPrefixes.some(
     (p) => pathname === p || pathname.startsWith(p + "/"),
   );
 
-  if (isProtected && !isLoggedIn) {
-    return NextResponse.redirect(new URL("/login", req.url));
+  if (isProtected && !hasSessionCookie(req)) {
+    return new NextResponse(null, {
+      status: 307,
+      headers: { Location: "/login" },
+    });
   }
 
   return NextResponse.next();
-});
+}
 
 export const config = {
   matcher: [
