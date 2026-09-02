@@ -1,5 +1,6 @@
 import { auth, signIn } from "@/lib/auth";
 import { redirect } from "next/navigation";
+import LoginForm from "./LoginForm";
 
 export default async function LoginPage() {
   const session = await auth();
@@ -17,6 +18,17 @@ export default async function LoginPage() {
         </div>
 
         <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 p-8">
+          <LoginForm />
+
+          <div className="relative my-6">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-gray-200 dark:border-gray-600" />
+            </div>
+            <div className="relative flex justify-center text-xs">
+              <span className="bg-white dark:bg-gray-800 px-2 text-gray-400">or</span>
+            </div>
+          </div>
+
           <form
             action={async () => {
               "use server";
@@ -50,8 +62,11 @@ export default async function LoginPage() {
           </form>
         </div>
 
-        <p className="text-center text-xs text-gray-500 dark:text-gray-400 mt-6">
-          By signing in, you agree to use SplitNice responsibly.
+        <p className="text-center text-sm text-gray-500 dark:text-gray-400 mt-6">
+          Don&apos;t have an account?{" "}
+          <a href="/signup" className="text-emerald-600 hover:text-emerald-700 font-medium">
+            Sign up
+          </a>
         </p>
       </div>
     </div>
