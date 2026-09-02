@@ -5,11 +5,17 @@ export default NextAuth(authConfig).auth;
 
 export const config = {
   matcher: [
+    "/dashboard",
     "/dashboard/:path*",
+    "/groups",
     "/groups/:path*",
+    "/expenses",
     "/expenses/:path*",
+    "/friends",
     "/friends/:path*",
+    "/settings",
     "/settings/:path*",
+    "/activity",
     "/activity/:path*",
     "/api/groups/:path*",
     "/api/expenses/:path*",

@@ -11,6 +11,7 @@ import Google from "next-auth/providers/google";
  * PrismaAdapter + JWT/session callbacks that need database access.
  */
 export const authConfig = {
+  trustHost: true,
   providers: [
     Google({
       clientId: process.env.GOOGLE_CLIENT_ID!,
@@ -19,5 +20,26 @@ export const authConfig = {
   ],
   pages: {
     signIn: "/login",
+  },
+  callbacks: {
+    authorized({ auth, request: { nextUrl } }) {
+      const isLoggedIn = !!auth?.user;
+      const isProtected = [
+        "/dashboard",
+        "/groups",
+        "/expenses",
+        "/friends",
+        "/settings",
+        "/activity",
+      ].some(
+        (p) => nextUrl.pathname === p || nextUrl.pathname.startsWith(p + "/"),
+      );
+
+      if (isProtected && !isLoggedIn) {
+        return Response.redirect(new URL("/login", nextUrl));
+      }
+
+      return true;
+    },
   },
 } satisfies NextAuthConfig;
