@@ -2,9 +2,11 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useSession, signOut } from "next-auth/react";
+import { useSession } from "next-auth/react";
 import { useCallback, useState } from "react";
 import Avatar from "@/components/ui/Avatar";
+
+const SIGNOUT_TIMEOUT_MS = 5000;
 
 const navItems = [
   {
@@ -72,12 +74,29 @@ export default function Sidebar() {
   const handleSignOut = useCallback(async () => {
     if (signingOut) return;
     setSigningOut(true);
+
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), SIGNOUT_TIMEOUT_MS);
+
     try {
-      await signOut({ redirect: false });
-      window.location.assign("/login");
+      const csrfRes = await fetch("/api/auth/csrf", {
+        signal: controller.signal,
+      });
+      const { csrfToken } = await csrfRes.json();
+
+      await fetch("/api/auth/signout", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: new URLSearchParams({ csrfToken }),
+        signal: controller.signal,
+      });
     } catch {
-      window.location.assign("/login");
+      // Timeout or network error — still navigate to login
+    } finally {
+      clearTimeout(timer);
     }
+
+    window.location.assign("/login");
   }, [signingOut]);
 
   return (
