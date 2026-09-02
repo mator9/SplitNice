@@ -1,7 +1,34 @@
-import NextAuth from "next-auth";
-import { authConfig } from "@/lib/auth.config";
+import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
 
-export default NextAuth(authConfig).auth;
+const protectedPrefixes = [
+  "/dashboard",
+  "/groups",
+  "/expenses",
+  "/friends",
+  "/settings",
+  "/activity",
+];
+
+function hasSessionCookie(req: NextRequest): boolean {
+  return (
+    req.cookies.has("authjs.session-token") ||
+    req.cookies.has("__Secure-authjs.session-token")
+  );
+}
+
+export default function middleware(req: NextRequest) {
+  const { pathname } = req.nextUrl;
+  const isProtected = protectedPrefixes.some(
+    (p) => pathname === p || pathname.startsWith(p + "/"),
+  );
+
+  if (isProtected && !hasSessionCookie(req)) {
+    return NextResponse.redirect(new URL("/login", req.nextUrl.origin));
+  }
+
+  return NextResponse.next();
+}
 
 export const config = {
   matcher: [
