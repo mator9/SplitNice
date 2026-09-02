@@ -24,10 +24,7 @@ export default function middleware(req: NextRequest) {
   );
 
   if (isProtected && !hasSessionCookie(req)) {
-    return new NextResponse(null, {
-      status: 307,
-      headers: { Location: "/login" },
-    });
+    return NextResponse.redirect(new URL("/login", req.nextUrl.origin));
   }
 
   return NextResponse.next();
