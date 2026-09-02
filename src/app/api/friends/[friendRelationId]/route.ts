@@ -29,7 +29,8 @@ export async function PATCH(
   const body = await req.json();
   const parsed = updateSchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
+    const msg = parsed.error.issues[0]?.message ?? "Invalid input";
+    return NextResponse.json({ error: msg }, { status: 400 });
   }
 
   const updated = await prisma.$transaction(async (tx) => {

@@ -6,6 +6,7 @@ import Modal from "@/components/ui/Modal";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import Select from "@/components/ui/Select";
+import { extractApiError } from "@/lib/api-error";
 
 interface Group {
   id: string;
@@ -113,7 +114,7 @@ export default function AddExpenseModal({ onClose, onSuccess, groupId }: AddExpe
 
       if (!res.ok) {
         const data = await res.json();
-        throw new Error(data.error?.fieldErrors ? "Validation error" : data.error || "Failed to create expense");
+        throw new Error(extractApiError(data.error, "Failed to create expense"));
       }
 
       onSuccess();
