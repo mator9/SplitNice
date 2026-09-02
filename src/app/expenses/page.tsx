@@ -8,7 +8,7 @@ import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import Avatar from "@/components/ui/Avatar";
 import EmptyState from "@/components/ui/EmptyState";
-import LoadingSpinner from "@/components/ui/LoadingSpinner";
+import { ListItemSkeleton } from "@/components/ui/Skeleton";
 import AddExpenseModal from "@/components/AddExpenseModal";
 
 interface Expense {
@@ -27,7 +27,7 @@ interface Expense {
 export default function ExpensesPage() {
   const { data: session } = useSession();
   const [expenses, setExpenses] = useState<Expense[]>([]);
-  const [expensesLoading, setExpensesLoading] = useState(true);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [sortBy, setSortBy] = useState("date");
   const [sortOrder, setSortOrder] = useState("desc");
@@ -35,7 +35,7 @@ export default function ExpensesPage() {
   const debouncedSearch = useDebounce(search, 300);
 
   useEffect(() => {
-    setExpensesLoading(true);
+    setLoading(true);
     const params = new URLSearchParams();
     if (debouncedSearch) params.set("q", debouncedSearch);
     params.set("sortBy", sortBy);
@@ -45,11 +45,9 @@ export default function ExpensesPage() {
       .then((r) => r.json())
       .then((data) => {
         setExpenses(data);
-        setExpensesLoading(false);
+        setLoading(false);
       })
-      .catch(() => {
-        setExpensesLoading(false);
-      });
+      .catch(() => setLoading(false));
   }, [debouncedSearch, sortBy, sortOrder]);
 
   const handleDelete = async (id: string) => {
@@ -59,18 +57,20 @@ export default function ExpensesPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Expenses</h1>
+        <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white tracking-tight">Expenses</h1>
         <Button onClick={() => setShowAddExpense(true)}>
-          <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
           </svg>
-          Add Expense
+          <span className="hidden sm:inline">Add Expense</span>
+          <span className="sm:hidden">Add</span>
         </Button>
       </div>
 
-      <div className="flex flex-col sm:flex-row gap-3">
+      {/* Search & sort */}
+      <div className="flex flex-col sm:flex-row gap-2">
         <div className="flex-1">
           <Input
             placeholder="Search expenses..."
@@ -78,87 +78,90 @@ export default function ExpensesPage() {
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-1.5">
           <select
-            className="px-3 py-2 border rounded-lg text-sm bg-white dark:bg-gray-800 dark:border-gray-600"
+            className="px-3 py-2 border rounded-lg text-xs font-medium bg-white dark:bg-slate-800 border-gray-200 dark:border-slate-600 focus:outline-none focus:ring-2 focus:ring-emerald-500/40 text-gray-700 dark:text-gray-200"
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value)}
           >
-            <option value="date">Sort by date</option>
-            <option value="amount">Sort by amount</option>
+            <option value="date">By date</option>
+            <option value="amount">By amount</option>
           </select>
           <button
             onClick={() => setSortOrder(sortOrder === "desc" ? "asc" : "desc")}
-            className="px-3 py-2 border rounded-lg text-sm bg-white dark:bg-gray-800 dark:border-gray-600 hover:bg-gray-50"
+            className="px-3 py-2 border rounded-lg text-xs font-medium bg-white dark:bg-slate-800 border-gray-200 dark:border-slate-600 hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors text-gray-700 dark:text-gray-200"
           >
-            {sortOrder === "desc" ? "Newest" : "Oldest"}
+            {sortOrder === "desc" ? "↓ Newest" : "↑ Oldest"}
           </button>
         </div>
       </div>
 
-      {expensesLoading ? (
-        <LoadingSpinner />
+      {/* Expenses list */}
+      {loading ? (
+        <Card className="divide-y divide-gray-50 dark:divide-slate-700/40">
+          {[1, 2, 3, 4, 5].map((i) => (
+            <div key={i} className="px-4 sm:px-5">
+              <ListItemSkeleton />
+            </div>
+          ))}
+        </Card>
       ) : expenses.length > 0 ? (
-        <div className="space-y-3">
+        <Card className="divide-y divide-gray-50 dark:divide-slate-700/40">
           {expenses.map((expense) => {
             const myShare = expense.splits.find((s) => s.userId === session?.user?.id);
             const iPaid = expense.paidBy.id === session?.user?.id;
 
             return (
-              <Card key={expense.id} className="p-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3 flex-1 min-w-0">
-                    <Avatar src={expense.paidBy.image} name={expense.paidBy.name} size="sm" />
-                    <div className="min-w-0 flex-1">
-                      <p className="font-medium text-gray-900 dark:text-gray-100 truncate">{expense.description}</p>
-                      <div className="flex items-center gap-2 text-xs text-gray-500 mt-0.5">
-                        <span>{expense.paidBy.name} paid</span>
-                        <span>&middot;</span>
-                        <span>{new Date(expense.date).toLocaleDateString()}</span>
-                        {expense.group && (
-                          <>
-                            <span>&middot;</span>
-                            <span>{expense.group.name}</span>
-                          </>
-                        )}
-                        {expense.category && (
-                          <>
-                            <span>&middot;</span>
-                            <span>{expense.category}</span>
-                          </>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                  <div className="text-right ml-4">
-                    <p className="font-semibold text-gray-900 dark:text-gray-100">
-                      ${parseFloat(expense.amount).toFixed(2)}
-                    </p>
-                    {myShare && (
-                      <p className={`text-xs ${iPaid ? "text-emerald-600" : "text-orange-600"}`}>
-                        {iPaid ? "you lent" : "you owe"} ${parseFloat(myShare.amount).toFixed(2)}
-                      </p>
+              <div key={expense.id} className="flex items-center gap-3 px-4 sm:px-5 py-3">
+                <Avatar src={expense.paidBy.image} name={expense.paidBy.name} size="sm" />
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">{expense.description}</p>
+                  <div className="flex items-center gap-1.5 text-xs text-gray-500 mt-0.5 flex-wrap">
+                    <span>{expense.paidBy.name} paid</span>
+                    <span className="text-gray-300">·</span>
+                    <span>{new Date(expense.date).toLocaleDateString(undefined, { month: "short", day: "numeric" })}</span>
+                    {expense.group && (
+                      <>
+                        <span className="text-gray-300">·</span>
+                        <span>{expense.group.name}</span>
+                      </>
+                    )}
+                    {expense.category && (
+                      <>
+                        <span className="text-gray-300">·</span>
+                        <span>{expense.category}</span>
+                      </>
                     )}
                   </div>
-                  <button
-                    onClick={() => handleDelete(expense.id)}
-                    className="ml-3 p-1.5 text-gray-400 hover:text-red-500 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-                    title="Delete expense"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                    </svg>
-                  </button>
                 </div>
-              </Card>
+                <div className="text-right shrink-0">
+                  <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 tabular-nums">
+                    ${parseFloat(expense.amount).toFixed(2)}
+                  </p>
+                  {myShare && (
+                    <p className={`text-[11px] font-medium tabular-nums ${iPaid ? "text-emerald-600" : "text-orange-600"}`}>
+                      {iPaid ? "lent" : "owe"} ${parseFloat(myShare.amount).toFixed(2)}
+                    </p>
+                  )}
+                </div>
+                <button
+                  onClick={() => handleDelete(expense.id)}
+                  className="p-1.5 text-gray-300 hover:text-red-500 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors shrink-0"
+                  title="Delete expense"
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                </button>
+              </div>
             );
           })}
-        </div>
+        </Card>
       ) : (
         <EmptyState
-          title={debouncedSearch ? "No matching expenses" : "No expenses yet"}
-          description={debouncedSearch ? "Try a different search term" : "Add your first expense to get started"}
-          action={!debouncedSearch ? <Button onClick={() => setShowAddExpense(true)}>Add Expense</Button> : undefined}
+          title={search ? "No matching expenses" : "No expenses yet"}
+          description={search ? "Try a different search term" : "Add your first expense to get started"}
+          action={!search ? <Button size="sm" onClick={() => setShowAddExpense(true)}>Add Expense</Button> : undefined}
         />
       )}
 
