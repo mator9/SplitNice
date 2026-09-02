@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { createExpenseSchema } from "@/lib/validations";
-import { calculateSplit, toDecimal, Decimal } from "@/lib/money";
+import { calculateSplit, toDecimal, formatMoney, Decimal } from "@/lib/money";
 import { isGroupMember } from "@/lib/authz";
 
 export async function GET(req: NextRequest) {
@@ -141,7 +141,7 @@ export async function POST(req: NextRequest) {
     await tx.activity.create({
       data: {
         type: "EXPENSE_CREATED",
-        description: `added "${data.description}" ($${totalAmount.toFixed(2)})`,
+        description: `added "${data.description}" (${formatMoney(totalAmount, data.currency)})`,
         userId: currentUserId,
         groupId: data.groupId || null,
         expenseId: expense.id,

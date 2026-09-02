@@ -428,6 +428,39 @@ describe("settlement integration", () => {
   });
 });
 
+describe("currency persistence and formatting", () => {
+  it("EUR expense is stored and formatted as EUR, not USD", () => {
+    const eurAmount = "42.50";
+    const currency = "EUR";
+
+    const formatted = formatMoney(eurAmount, currency);
+    expect(formatted).toBe("€42.50");
+    expect(formatted).not.toContain("$");
+
+    expect(formatMoney("42.50", "USD")).toBe("$42.50");
+    expect(formatMoney("42.50", "EUR")).toBe("€42.50");
+    expect(formatMoney("42.50", "GBP")).toBe("£42.50");
+    expect(formatMoney("42.50", "INR")).toBe("₹42.50");
+    expect(formatMoney("42.50", "CAD")).toBe("C$42.50");
+    expect(formatMoney("42.50", "AUD")).toBe("A$42.50");
+  });
+
+  it("formatMoney defaults to USD when no currency provided", () => {
+    expect(formatMoney("25.00")).toBe("$25.00");
+  });
+
+  it("formatMoney preserves currency through negative amounts", () => {
+    expect(formatMoney("-15.00", "EUR")).toBe("-€15.00");
+    expect(formatMoney("-15.00", "GBP")).toBe("-£15.00");
+  });
+
+  it("formatMoney handles unknown currency codes gracefully", () => {
+    const formatted = formatMoney("10.00", "CHF");
+    expect(formatted).toBe("CHF 10.00");
+    expect(formatted).not.toContain("$");
+  });
+});
+
 describe("edge cases", () => {
   it("handles zero amount", () => {
     const result = calculateEqualSplit(toDecimal("0"), ["a", "b"]);

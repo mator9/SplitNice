@@ -10,15 +10,22 @@ import { BalanceSkeleton, ListItemSkeleton } from "@/components/ui/Skeleton";
 import Link from "next/link";
 import { useState } from "react";
 import AddExpenseModal from "@/components/AddExpenseModal";
+import { formatMoney } from "@/lib/money";
 
-interface Balance {
+interface CurrencyBalance {
+  currency: string;
   youOwe: string;
   youAreOwed: string;
   net: string;
+}
+
+interface Balance {
+  balanceByCurrency: CurrencyBalance[];
   debts: Array<{
     from: { id: string; name: string; email: string; image?: string };
     to: { id: string; name: string; email: string; image?: string };
     amount: string;
+    currency: string;
   }>;
 }
 
@@ -47,7 +54,7 @@ export default function DashboardPage() {
   const { data: expenses, loading: loadingExpenses } = useFetch<Expense[]>("/api/expenses?limit=5");
   const [showAddExpense, setShowAddExpense] = useState(false);
 
-  const netNum = parseFloat(balances?.net || "0");
+  const currencyBalances = balances?.balanceByCurrency || [];
 
   return (
     <div className="space-y-5">
@@ -79,17 +86,36 @@ export default function DashboardPage() {
         <div className="grid grid-cols-3 gap-3">
           <Card className="p-4">
             <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">You owe</p>
-            <p className="text-lg sm:text-xl font-bold text-orange-600 mt-1 tabular-nums">${balances?.youOwe || "0.00"}</p>
+            {currencyBalances.length > 0 ? currencyBalances.map((cb) => (
+              <p key={cb.currency} className="text-lg sm:text-xl font-bold text-orange-600 mt-1 tabular-nums">
+                {formatMoney(cb.youOwe, cb.currency)}
+              </p>
+            )) : (
+              <p className="text-lg sm:text-xl font-bold text-orange-600 mt-1 tabular-nums">{formatMoney("0.00")}</p>
+            )}
           </Card>
           <Card className="p-4">
             <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Owed to you</p>
-            <p className="text-lg sm:text-xl font-bold text-emerald-600 mt-1 tabular-nums">${balances?.youAreOwed || "0.00"}</p>
+            {currencyBalances.length > 0 ? currencyBalances.map((cb) => (
+              <p key={cb.currency} className="text-lg sm:text-xl font-bold text-emerald-600 mt-1 tabular-nums">
+                {formatMoney(cb.youAreOwed, cb.currency)}
+              </p>
+            )) : (
+              <p className="text-lg sm:text-xl font-bold text-emerald-600 mt-1 tabular-nums">{formatMoney("0.00")}</p>
+            )}
           </Card>
           <Card className="p-4">
             <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Net</p>
-            <p className={`text-lg sm:text-xl font-bold mt-1 tabular-nums ${netNum >= 0 ? "text-emerald-600" : "text-orange-600"}`}>
-              {netNum >= 0 ? "+" : ""}${balances?.net || "0.00"}
-            </p>
+            {currencyBalances.length > 0 ? currencyBalances.map((cb) => {
+              const netNum = parseFloat(cb.net);
+              return (
+                <p key={cb.currency} className={`text-lg sm:text-xl font-bold mt-1 tabular-nums ${netNum >= 0 ? "text-emerald-600" : "text-orange-600"}`}>
+                  {netNum >= 0 ? "+" : ""}{formatMoney(cb.net, cb.currency)}
+                </p>
+              );
+            }) : (
+              <p className="text-lg sm:text-xl font-bold text-emerald-600 mt-1 tabular-nums">+{formatMoney("0.00")}</p>
+            )}
           </Card>
         </div>
       )}
@@ -114,7 +140,7 @@ export default function DashboardPage() {
                     </div>
                   </div>
                   <span className={`text-sm font-semibold tabular-nums ${iOwe ? "text-orange-600" : "text-emerald-600"}`}>
-                    ${debt.amount}
+                    {formatMoney(debt.amount, debt.currency)}
                   </span>
                 </div>
               );
@@ -151,7 +177,7 @@ export default function DashboardPage() {
                     </p>
                   </div>
                   <span className="text-sm font-semibold text-gray-900 dark:text-gray-100 ml-3 tabular-nums">
-                    ${parseFloat(expense.amount).toFixed(2)}
+                    {formatMoney(expense.amount, expense.currency)}
                   </span>
                 </div>
               ))}

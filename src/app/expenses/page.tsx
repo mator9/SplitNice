@@ -10,6 +10,7 @@ import Avatar from "@/components/ui/Avatar";
 import EmptyState from "@/components/ui/EmptyState";
 import { ListItemSkeleton } from "@/components/ui/Skeleton";
 import AddExpenseModal from "@/components/AddExpenseModal";
+import { formatMoney } from "@/lib/money";
 
 interface Expense {
   id: string;
@@ -136,11 +137,11 @@ export default function ExpensesPage() {
                 </div>
                 <div className="text-right shrink-0">
                   <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 tabular-nums">
-                    ${parseFloat(expense.amount).toFixed(2)}
+                    {formatMoney(expense.amount, expense.currency)}
                   </p>
                   {myShare && (
                     <p className={`text-[11px] font-medium tabular-nums ${iPaid ? "text-emerald-600" : "text-orange-600"}`}>
-                      {iPaid ? "lent" : "owe"} ${parseFloat(myShare.amount).toFixed(2)}
+                      {iPaid ? "lent" : "owe"} {formatMoney(myShare.amount, expense.currency)}
                     </p>
                   )}
                 </div>
